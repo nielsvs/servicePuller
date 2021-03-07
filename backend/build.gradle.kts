@@ -30,6 +30,12 @@ application {
 dependencies {
   implementation(platform("io.vertx:vertx-stack-depchain:$vertxVersion"))
   implementation("io.vertx:vertx-core")
+  implementation("io.vertx:vertx-web")
+  implementation("io.vertx:vertx-web-client")
+  implementation("io.vertx:vertx-mysql-client")
+  implementation("io.vertx:vertx-sql-client-templates")
+  implementation("com.fasterxml.jackson.core:jackson-databind:2.12.2")
+  implementation("commons-validator:commons-validator:1.7")
   testImplementation("io.vertx:vertx-junit5")
   testImplementation("org.junit.jupiter:junit-jupiter:$junitJupiterVersion")
 }
