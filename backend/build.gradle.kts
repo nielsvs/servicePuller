@@ -35,6 +35,7 @@ dependencies {
   implementation("io.vertx:vertx-mysql-client")
   implementation("io.vertx:vertx-sql-client-templates")
   implementation("io.vertx:vertx-rx-java2")
+  implementation("io.vertx:vertx-web-validation")
   implementation("com.fasterxml.jackson.core:jackson-databind:2.12.2")
   implementation("com.google.code.gson:gson:2.8.6")
   implementation("commons-validator:commons-validator:1.7")

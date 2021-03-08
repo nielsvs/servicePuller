@@ -30,6 +30,7 @@ To run your application:
 
 ** TODO
 - Make available SQL queries independent of logic code
-- Refactor to use Vertx web validation
 - Use Vertx services
+- Refactor 'updateServices' to use RxJava fully
+- Secure application
 

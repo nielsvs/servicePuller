@@ -8,20 +8,30 @@ import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.validation.RequestPredicate;
+import io.vertx.ext.web.validation.builder.Bodies;
+import io.vertx.json.schema.SchemaRouterOptions;
+import io.vertx.json.schema.common.dsl.ObjectSchemaBuilder;
 import io.vertx.reactivex.core.buffer.Buffer;
 import io.vertx.reactivex.ext.web.Router;
 import io.vertx.reactivex.ext.web.RoutingContext;
 import io.vertx.reactivex.ext.web.client.HttpResponse;
 import io.vertx.reactivex.ext.web.client.WebClient;
 import io.vertx.reactivex.ext.web.handler.BodyHandler;
+import io.vertx.reactivex.ext.web.validation.ValidationHandler;
+import io.vertx.reactivex.json.schema.SchemaParser;
+import io.vertx.reactivex.json.schema.SchemaRouter;
 import org.apache.commons.validator.routines.UrlValidator;
 import io.vertx.reactivex.core.AbstractVerticle;
 import io.vertx.reactivex.core.http.HttpServer;
+
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+
+import static io.vertx.json.schema.common.dsl.Schemas.*;
 
 public class HttpServerVerticle extends AbstractVerticle {
 
@@ -43,19 +53,69 @@ public class HttpServerVerticle extends AbstractVerticle {
     HttpServer server = vertx.createHttpServer();
     client = WebClient.create(vertx);
 
+    SchemaRouter schemaRouter = SchemaRouter.create(vertx, new SchemaRouterOptions());
+    SchemaParser schemaParser = SchemaParser.createDraft7SchemaParser(schemaRouter);
+
+    // Service url is required to add a new service, name is optional
+    ObjectSchemaBuilder addBodySchemaBuilder = objectSchema()
+      .requiredProperty("service", stringSchema())
+      .property("name", stringSchema());
+    // Service id is required to delete a service
+    ObjectSchemaBuilder deleteBodySchemaBuilder = objectSchema()
+      .requiredProperty("id", intSchema());
+
+    // Service id, url and name are required to update a service
+    ObjectSchemaBuilder updateBodySchemaBuilder = objectSchema()
+      .requiredProperty("id", intSchema())
+      .requiredProperty("service", stringSchema())
+      .requiredProperty("name", stringSchema());
+
+    // Validate handlers for add, delete and update.
+    ValidationHandler addValidateHandler = ValidationHandler.newInstance(
+      ValidationHandler
+        .builder(schemaParser)
+        .predicate(RequestPredicate.BODY_REQUIRED)
+        .body(Bodies.json(addBodySchemaBuilder))
+        .body(Bodies.formUrlEncoded(addBodySchemaBuilder))
+        .build());
+
+    ValidationHandler deleteValidateHandler = ValidationHandler.newInstance(
+      ValidationHandler
+        .builder(schemaParser)
+        .predicate(RequestPredicate.BODY_REQUIRED)
+        .body(Bodies.json(deleteBodySchemaBuilder))
+        .body(Bodies.formUrlEncoded(deleteBodySchemaBuilder))
+        .build());
+
+    ValidationHandler updateValidateHandler = ValidationHandler.newInstance(
+      ValidationHandler
+        .builder(schemaParser)
+        .predicate(RequestPredicate.BODY_REQUIRED)
+        .body(Bodies.json(updateBodySchemaBuilder))
+        .body(Bodies.formUrlEncoded(updateBodySchemaBuilder))
+        .build());
+
+    // Routing
     Router router = Router.router(vertx);
     router.get("/").handler(this::serviceGetHandler);
     router.post().handler(BodyHandler.create());
-    router.post("/").handler(this::serviceAddHandler);
+    router
+      .post("/")
+      .handler(addValidateHandler)
+      .handler(this::serviceAddHandler);
     router.delete().handler(BodyHandler.create());
-    router.delete("/").handler(this::serviceDeletionHandler);
+    router
+      .delete("/")
+      .handler(deleteValidateHandler)
+      .handler(this::serviceDeletionHandler);
     router.put().handler(BodyHandler.create());
-    router.put("/").handler(this::serviceUpdateHandler);
+    router
+      .put("/")
+      .handler(updateValidateHandler)
+      .handler(this::serviceUpdateHandler);
 
     // Update service records every minutes
-    Runnable updateServicesRunnable = () -> {
-      this.updateServices();
-    };
+    Runnable updateServicesRunnable = this::updateServices;
     ScheduledExecutorService exec = Executors.newScheduledThreadPool(1);
     exec.scheduleAtFixedRate(updateServicesRunnable, 0, 1, TimeUnit.MINUTES);
 
@@ -76,7 +136,7 @@ public class HttpServerVerticle extends AbstractVerticle {
   /**
    * Iterate through all the current services, check the current status of the specified
    * url and update the service entry
-   * */
+   */
   private void updateServices() {
     DeliveryOptions options = new DeliveryOptions().addHeader("action", "get-services");
     vertx.eventBus().request(DBQueue, null, options, reply -> {
@@ -100,7 +160,7 @@ public class HttpServerVerticle extends AbstractVerticle {
 
         statusSingle
           .map(response -> {
-            Integer statusCode = response.statusCode();
+            int statusCode = response.statusCode();
             String status = "FAIL";
             if (statusCode >= 200 && statusCode < 300) {
               status = "OK";
@@ -142,31 +202,13 @@ public class HttpServerVerticle extends AbstractVerticle {
     // Get values
     JsonObject body = context.getBodyAsJson();
 
-    // body is required, notify user
-    if (body == null) {
-      JsonObject badRequest = new JsonObject();
-      badRequest.put("message", "Nothing was sent to server, service url is required");
-      context.response().setStatusCode(400);
-      context.response().end(badRequest.encodePrettily());
-      return;
-    }
-
     // Fetch service url and name
     String serviceUrl = body.getString("service");
     String name = body.getString("name");
 
-    // url is required, notify user
-    if (serviceUrl == null) {
-      JsonObject badRequest = new JsonObject();
-      badRequest.put("message", "The url for the service is required. Please add the url.");
-      context.response().setStatusCode(400);
-      context.response().end(badRequest.encodePrettily());
-      return;
-    }
-
     // Validate url format
     Boolean validUrl = this.validateUrl(serviceUrl, context);
-    if(!validUrl) return;
+    if (!validUrl) return;
 
     // Get status of service
     Single<HttpResponse<Buffer>> statusSingle = client
@@ -176,7 +218,7 @@ public class HttpServerVerticle extends AbstractVerticle {
 
     statusSingle
       .map(response -> {
-        Integer statusCode = response.statusCode();
+        int statusCode = response.statusCode();
         String status = "FAIL";
         if (statusCode >= 200 && statusCode < 300) {
           status = "OK";
@@ -206,26 +248,8 @@ public class HttpServerVerticle extends AbstractVerticle {
     // Get values
     JsonObject body = context.getBodyAsJson();
 
-    // body is required, notify user
-    if (body == null) {
-      JsonObject badRequest = new JsonObject();
-      badRequest.put("message", "Nothing was sent to server, service url is required");
-      context.response().setStatusCode(400);
-      context.response().end(badRequest.encodePrettily());
-      return;
-    }
-
     // Fetch id
     String id = body.getString("id");
-
-    // url is required, notify user
-    if (id == null) {
-      JsonObject badRequest = new JsonObject();
-      badRequest.put("message", "The id for the service is required. Please add the id.");
-      context.response().setStatusCode(400);
-      context.response().end(badRequest.encodePrettily());
-      return;
-    }
 
     JsonObject json = new JsonObject();
     json.put("id", id);
@@ -245,40 +269,14 @@ public class HttpServerVerticle extends AbstractVerticle {
     // Get values
     JsonObject body = context.getBodyAsJson();
 
-    // body is required, notify user
-    if (body == null) {
-      JsonObject badRequest = new JsonObject();
-      badRequest.put("message", "Nothing was sent to server, service url is required");
-      context.response().setStatusCode(400);
-      context.response().end(badRequest.encodePrettily());
-      return;
-    }
-
-    // Fetch service url and name
+    // Fetch service id, url and name
     String id = body.getString("id");
     String serviceUrl = body.getString("service");
     String name = body.getString("name");
 
-    if (id == null) {
-      JsonObject badRequest = new JsonObject();
-      badRequest.put("message", "The id for the service is required. Please add the id.");
-      context.response().setStatusCode(400);
-      context.response().end(badRequest.encodePrettily());
-      return;
-    }
-
-    // url is required, notify user
-    if (serviceUrl == null) {
-      JsonObject badRequest = new JsonObject();
-      badRequest.put("message", "The url for the service is required. Please add the url.");
-      context.response().setStatusCode(400);
-      context.response().end(badRequest.encodePrettily());
-      return;
-    }
-
     // Validate url format
     Boolean validUrl = this.validateUrl(serviceUrl, context);
-    if(!validUrl) return;
+    if (!validUrl) return;
 
     JsonObject json = new JsonObject();
     json.put("id", id);
@@ -298,11 +296,12 @@ public class HttpServerVerticle extends AbstractVerticle {
 
   /**
    * Validate url, send error to user and return if url is valid or not
-   * @param url - url to be validated
+   *
+   * @param url     - url to be validated
    * @param context - Routing context
    * @return - url validity
    */
-  private Boolean validateUrl(String url, RoutingContext context){
+  private Boolean validateUrl(String url, RoutingContext context) {
     // Validate url format
     UrlValidator urlValidator = new UrlValidator();
     if (!urlValidator.isValid(url)) {
@@ -314,6 +313,5 @@ public class HttpServerVerticle extends AbstractVerticle {
     }
     return true;
   }
-
 }
 
