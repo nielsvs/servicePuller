@@ -28,4 +28,8 @@ To run your application:
 * https://groups.google.com/forum/?fromgroups#!forum/vertx[Vert.x User Group]
 * https://gitter.im/eclipse-vertx/vertx-users[Vert.x Gitter]
 
+** TODO
+- Make it possible to add unavailable services
+- Make available SQL queries independent of logic code
+- Refactor to use Vertx web validation
 
