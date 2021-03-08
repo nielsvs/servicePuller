@@ -29,7 +29,7 @@ To run your application:
 * https://gitter.im/eclipse-vertx/vertx-users[Vert.x Gitter]
 
 ** TODO
-- Make it possible to add unavailable services
 - Make available SQL queries independent of logic code
 - Refactor to use Vertx web validation
+- Use Vertx services
 

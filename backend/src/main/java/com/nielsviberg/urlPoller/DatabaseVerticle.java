@@ -5,7 +5,6 @@ import io.vertx.core.Promise;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
-import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import io.vertx.mysqlclient.MySQLConnectOptions;
 import io.vertx.mysqlclient.MySQLPool;
@@ -33,7 +32,8 @@ public class DatabaseVerticle extends AbstractVerticle {
   private static final String SQL_ADD_SERVICE = "INSERT INTO Service (Url, Name, Status, Created, LastUpdated) \n" +
     "VALUES (#{url},#{name},#{status}, current_timestamp(), current_timestamp());";
   private static final String SQL_DELETE_SERVICE = "DELETE FROM Service where Id=#{id}";
-  private static final String SQL_UPDATE_SERVICE = "UPDATE Service SET Url=#{url}, Name=#{name} WHERE Id=#{id}";
+  private static final String SQL_UPDATE_SERVICE = "UPDATE Service SET Url=#{url}, Name=#{name}, LastUpdated=current_timestamp() WHERE Id=#{id}";
+  private static final String SQL_UPDATE_WITH_STATUS_SERVICE = "UPDATE Service SET Url=#{url}, Name=#{name}, Status=#{status}, LastUpdated=current_timestamp() WHERE Id=#{id}";
 
   public static final String CONFIG_DB_PORT = "db.port";
   public static final String CONFIG_DB_DEFAULT_DB = "db.default.db";
@@ -106,14 +106,13 @@ public class DatabaseVerticle extends AbstractVerticle {
     }
   }
 
-  private void getServices(Message<JsonObject> message){
+  private void getServices(Message<JsonObject> message) {
     pool.query(SQL_GET_SERVICES).execute(res -> {
-      if(res.failed()){
+      if (res.failed()) {
         reportQueryError(message, res.cause());
       }
       RowSet<Row> result = res.result();
-      //TODO: add typing
-      ArrayList services = new ArrayList();
+      ArrayList<JsonObject> services = new ArrayList();
       result.forEach(row -> services.add(row.toJson()));
       JsonObject json = new JsonObject()
         .put("services", services);
@@ -121,7 +120,7 @@ public class DatabaseVerticle extends AbstractVerticle {
     });
   }
 
-  private void addService(Message<JsonObject> message){
+  private void addService(Message<JsonObject> message) {
 
     JsonObject json = message.body();
 
@@ -129,6 +128,7 @@ public class DatabaseVerticle extends AbstractVerticle {
     Map<String, Object> parameters = new HashMap<>();
     parameters.put("url", json.getString("url"));
     parameters.put("name", json.getString("name"));
+    parameters.put("status", json.getString("status"));
 
     SqlTemplate.forQuery(pool, SQL_ADD_SERVICE).execute(parameters).onSuccess(res -> {
       message.reply(new JsonObject());
@@ -137,7 +137,7 @@ public class DatabaseVerticle extends AbstractVerticle {
     });
   }
 
-  private void removeService(Message<JsonObject> message){
+  private void removeService(Message<JsonObject> message) {
 
     JsonObject json = message.body();
 
@@ -152,9 +152,11 @@ public class DatabaseVerticle extends AbstractVerticle {
     });
   }
 
-  private void updateService(Message<JsonObject> message){
 
+  private void updateService(Message<JsonObject> message) {
+    String updateQuery = SQL_UPDATE_SERVICE;
     JsonObject json = message.body();
+    Boolean updateStatus = json.getBoolean("updateStatus",false);
 
     // SQL template parameters
     Map<String, Object> parameters = new HashMap<>();
@@ -162,7 +164,13 @@ public class DatabaseVerticle extends AbstractVerticle {
     parameters.put("url", json.getString("url"));
     parameters.put("name", json.getString("name"));
 
-    SqlTemplate.forQuery(pool, SQL_UPDATE_SERVICE).execute(parameters).onSuccess(res -> {
+    // Add status update to parameters and use SQL update with status
+    if (updateStatus) {
+      parameters.put("status", json.getString("status"));
+      updateQuery = SQL_UPDATE_WITH_STATUS_SERVICE;
+    }
+
+    SqlTemplate.forQuery(pool, updateQuery).execute(parameters).onSuccess(res -> {
       message.reply(new JsonObject());
     }).onFailure(res -> {
       reportQueryError(message, res.getCause());
