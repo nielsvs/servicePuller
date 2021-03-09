@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.nielsviberg.urlPoller.TestMainVerticle" tests="1" skipped="0" failures="0" errors="0" timestamp="2021-03-09T20:32:24" hostname="Nielss-MacBook-Pro.local" time="0.497">
+  <properties/>
+  <testcase name="verticle_deployed(Vertx, VertxTestContext)" classname="com.nielsviberg.urlPoller.TestMainVerticle" time="0.497"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[Mar 09, 2021 9:32:24 PM io.vertx.core.impl.VertxImpl
+WARNING: You're already on a Vert.x context, are you sure you want to create a new Vertx instance?
+Mar 09, 2021 9:32:24 PM com.nielsviberg.urlPoller.HttpServerVerticle
+INFO: HTTP server running on port 8080
+]]></system-err>
+</testsuite>

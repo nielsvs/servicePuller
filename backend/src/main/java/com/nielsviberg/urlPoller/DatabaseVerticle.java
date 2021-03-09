@@ -18,7 +18,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 
-
 public class DatabaseVerticle extends AbstractVerticle {
 
   private MySQLPool pool;
@@ -39,6 +38,8 @@ public class DatabaseVerticle extends AbstractVerticle {
   public static final String CONFIG_DB_HOST = "db.host";
   public static final String CONFIG_DB_MAX_POOL_SIZE = "db.max_pool_size";
   public static final String CONFIG_DB_QUEUE = "db.queue";
+  public static final String CONFIG_DB_USER = "db.user";
+  public static final String CONFIG_DB_PASSWORD = "db.password";
 
   @Override
   public void start(Promise<Void> startPromise) throws Exception {
@@ -48,8 +49,8 @@ public class DatabaseVerticle extends AbstractVerticle {
       .setPort(config().getInteger(CONFIG_DB_PORT, 3306))
       .setHost(config().getString(CONFIG_DB_HOST, "localhost"))
       .setDatabase(config().getString(CONFIG_DB_DEFAULT_DB, "url-poller"))
-      .setUser("root")
-      .setPassword("202$Stockholm");
+      .setUser(config().getString(CONFIG_DB_USER, "root"))
+      .setPassword(config().getString(CONFIG_DB_PASSWORD, "202$Stockholm"));
 
     // Custom pool options
     PoolOptions poolOptions = new PoolOptions().setMaxSize(config().getInteger(CONFIG_DB_MAX_POOL_SIZE, 5));
@@ -80,6 +81,7 @@ public class DatabaseVerticle extends AbstractVerticle {
 
   /**
    * Get database action and perform operation according to message. Fails if message is not recognized.
+   *
    * @param message - eventbus message containing identifier to perform correct db operation
    */
   public void onMessage(Message<JsonObject> message) {
@@ -165,7 +167,7 @@ public class DatabaseVerticle extends AbstractVerticle {
   private void updateService(Message<JsonObject> message) {
     String updateQuery = SQL_UPDATE_SERVICE;
     JsonObject json = message.body();
-    Boolean updateStatus = json.getBoolean("updateStatus",false);
+    Boolean updateStatus = json.getBoolean("updateStatus", false);
 
     // SQL template parameters
     Map<String, Object> parameters = new HashMap<>();
@@ -188,8 +190,9 @@ public class DatabaseVerticle extends AbstractVerticle {
 
   /**
    * Log error and fail message with same error
+   *
    * @param message - eventbus message
-   * @param cause - cause of error
+   * @param cause   - cause of error
    */
   private void reportQueryError(Message<JsonObject> message, Throwable cause) {
     LOGGER.error("Database query error", cause);
