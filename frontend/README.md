@@ -1,4 +1,4 @@
-# Service Puller
+# Service Poller
 
 Keep track of the health of your services. Add a url and watch as the service will be marked as OK or FAIl.
 
@@ -59,7 +59,9 @@ The following technologies are the mainly used technologies to build, package an
 
 ## TODO
 
--
+- Add production apiHost when available
+- Improve error messages to users (could come from BE)
+- Move local text to CMS
 
 ## Contributing
 

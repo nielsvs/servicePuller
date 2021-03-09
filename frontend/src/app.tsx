@@ -1,14 +1,10 @@
 import React from "react";
 import { createGlobalStyle } from "styled-components";
+import Overview from "pages/Overview";
 
 const GlobalStyle = createGlobalStyle`
   body {
-    height: 100%;
-    margin: 0;
     font-family: "Roboto";
-  }
-  html {
-    height: 100%;
   }
 `;
 
@@ -17,7 +13,7 @@ function App() {
     <div>
       <GlobalStyle />
       <React.Suspense fallback={<h1>Loading</h1>}>
-        <h1>Hello</h1>
+        <Overview />
       </React.Suspense>
     </div>
   );

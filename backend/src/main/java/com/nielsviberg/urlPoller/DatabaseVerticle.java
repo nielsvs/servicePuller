@@ -131,6 +131,10 @@ public class DatabaseVerticle extends AbstractVerticle {
     parameters.put("status", json.getString("status"));
 
     SqlTemplate.forQuery(pool, SQL_ADD_SERVICE).execute(parameters).onSuccess(res -> {
+      RowSet<Row> result = res.value();
+      result.forEach(row -> {
+        System.out.println(row.toJson());
+      });
       message.reply(new JsonObject());
     }).onFailure(res -> {
       reportQueryError(message, res.getCause());

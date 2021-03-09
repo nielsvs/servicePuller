@@ -5,6 +5,7 @@ import com.google.gson.reflect.TypeToken;
 import io.reactivex.Single;
 import io.vertx.core.*;
 import io.vertx.core.eventbus.DeliveryOptions;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.json.JsonObject;
@@ -18,6 +19,7 @@ import io.vertx.reactivex.ext.web.RoutingContext;
 import io.vertx.reactivex.ext.web.client.HttpResponse;
 import io.vertx.reactivex.ext.web.client.WebClient;
 import io.vertx.reactivex.ext.web.handler.BodyHandler;
+import io.vertx.reactivex.ext.web.handler.CorsHandler;
 import io.vertx.reactivex.ext.web.validation.ValidationHandler;
 import io.vertx.reactivex.json.schema.SchemaParser;
 import io.vertx.reactivex.json.schema.SchemaRouter;
@@ -97,20 +99,63 @@ public class HttpServerVerticle extends AbstractVerticle {
 
     // Routing
     Router router = Router.router(vertx);
-    router.get("/").handler(this::serviceGetHandler);
+    router.options("/").handler(CorsHandler.create("*")
+      .allowedMethod(HttpMethod.OPTIONS)
+      .allowedMethod(HttpMethod.DELETE)
+      .allowedMethod(HttpMethod.POST)
+      .allowedMethod(HttpMethod.PUT)
+      .allowedHeader("Access-Control-Request-Method")
+      .allowedHeader("Access-Control-Allow-Credentials")
+      .allowedHeader("Access-Control-Allow-Origin")
+      .allowedHeader("Access-Control-Allow-Headers")
+      .allowedHeader("Content-Type"));
+    router
+      .get("/")
+      .handler(CorsHandler.create("*")
+        .allowedMethod(HttpMethod.GET)
+        .allowedHeader("Access-Control-Request-Method")
+        .allowedHeader("Access-Control-Allow-Credentials")
+        .allowedHeader("Access-Control-Allow-Origin")
+        .allowedHeader("Access-Control-Allow-Headers")
+        .allowedHeader("Content-Type"))
+      .handler(this::serviceGetHandler);
     router.post().handler(BodyHandler.create());
     router
       .post("/")
+      .handler(CorsHandler.create("*")
+        .allowedMethod(HttpMethod.OPTIONS)
+        .allowedMethod(HttpMethod.POST)
+        .allowedHeader("Access-Control-Request-Method")
+        .allowedHeader("Access-Control-Allow-Credentials")
+        .allowedHeader("Access-Control-Allow-Origin")
+        .allowedHeader("Access-Control-Allow-Headers")
+        .allowedHeader("Content-Type"))
       .handler(addValidateHandler)
       .handler(this::serviceAddHandler);
     router.delete().handler(BodyHandler.create());
     router
       .delete("/")
+      .handler(CorsHandler.create("*")
+        .allowedMethod(HttpMethod.OPTIONS)
+        .allowedMethod(HttpMethod.DELETE)
+        .allowedHeader("Access-Control-Request-Method")
+        .allowedHeader("Access-Control-Allow-Credentials")
+        .allowedHeader("Access-Control-Allow-Origin")
+        .allowedHeader("Access-Control-Allow-Headers")
+        .allowedHeader("Content-Type"))
       .handler(deleteValidateHandler)
       .handler(this::serviceDeletionHandler);
     router.put().handler(BodyHandler.create());
     router
       .put("/")
+      .handler(CorsHandler.create("*")
+        .allowedMethod(HttpMethod.OPTIONS)
+        .allowedMethod(HttpMethod.PUT)
+        .allowedHeader("Access-Control-Request-Method")
+        .allowedHeader("Access-Control-Allow-Credentials")
+        .allowedHeader("Access-Control-Allow-Origin")
+        .allowedHeader("Access-Control-Allow-Headers")
+        .allowedHeader("Content-Type"))
       .handler(updateValidateHandler)
       .handler(this::serviceUpdateHandler);
 
@@ -119,7 +164,7 @@ public class HttpServerVerticle extends AbstractVerticle {
     ScheduledExecutorService exec = Executors.newScheduledThreadPool(1);
     exec.scheduleAtFixedRate(updateServicesRunnable, 0, 1, TimeUnit.MINUTES);
 
-    int portNumber = config().getInteger(CONFIG_HTTP_SERVER_PORT, 8080);
+    int portNumber = config().getInteger(CONFIG_HTTP_SERVER_PORT, 8888);
     server
       .requestHandler(router)
       .listen(portNumber, ar -> {
@@ -238,6 +283,9 @@ public class HttpServerVerticle extends AbstractVerticle {
             context.fail(reply.cause());
             return;
           }
+
+          System.out.println(reply.result());
+
           context.response().setStatusCode(204);
           context.response().end();
         });

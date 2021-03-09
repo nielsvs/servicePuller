@@ -1,15 +1,13 @@
 {
-  "name": "Service puller",
+  "name": "service-poller",
   "author": {
     "name": "Niels Viberg Sønderbæk",
     "email": "nielsviberg@gmail.com"
   },
   "version": "1.0.0",
   "dependencies": {
-    "@material-ui/core": "^4.11.2",
-    "@material-ui/icons": "^4.11.2",
-    "@material-ui/lab": "^4.0.0-alpha.57",
     "axios": "^0.21.1",
+    "date-fns": "^2.19.0",
     "react": "^17.0.1",
     "react-dom": "^17.0.1",
     "styled-components": "^5.2.1"
