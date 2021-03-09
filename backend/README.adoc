@@ -37,4 +37,5 @@ The application can be tested using the following command:
 - Secure application
 - Update CORS headers to reflect production environment
 - Make interval for updating services configurable
-
+- Use Docker to initialize db and server automatically
+- Add tests to remaining functionality

@@ -303,8 +303,6 @@ public class HttpServerVerticle extends AbstractVerticle {
             return;
           }
 
-          System.out.println(reply.result());
-
           context.response().setStatusCode(204);
           context.response().end();
         });

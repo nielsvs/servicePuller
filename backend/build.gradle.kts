@@ -39,6 +39,7 @@ dependencies {
   implementation("com.fasterxml.jackson.core:jackson-databind:2.12.2")
   implementation("com.google.code.gson:gson:2.8.6")
   implementation("commons-validator:commons-validator:1.7")
+  testImplementation("io.reactiverse:reactiverse-junit5-web-client:0.3.0")
   testImplementation("io.vertx:vertx-junit5")
   testImplementation("org.junit.jupiter:junit-jupiter:$junitJupiterVersion")
 }

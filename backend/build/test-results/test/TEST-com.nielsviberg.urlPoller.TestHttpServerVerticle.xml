@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.nielsviberg.urlPoller.TestHttpServerVerticle" tests="1" skipped="0" failures="0" errors="0" timestamp="2021-03-09T22:45:40" hostname="Nielss-MacBook-Pro.local" time="1.146">
+  <properties/>
+  <testcase name="testAddAndGetService(Vertx, VertxTestContext)" classname="com.nielsviberg.urlPoller.TestHttpServerVerticle" time="1.146"/>
+  <system-out><![CDATA[204
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
