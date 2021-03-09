@@ -1,36 +1,40 @@
-= Urlpoller
+= Service Poller
 
-image:https://img.shields.io/badge/vert.x-4.0.2-purple.svg[link="https://vertx.io"]
+Manage services and update their status continuously.
 
-This application was generated using http://start.vertx.io
+== Architecture
+The application is split into two verticles; a http-server verticle and a database verticle. The two verticles communicate through the eventbus. The application uses HTTP to receive requests and response to said requests. All services status are updated every minuted by utilizing the `ScheduledExecutorService` in the http-server verticle. This is subject to change.
 
-== Building
+== Note
+The structure of the application is inspired by https://vertx.tk/docs/guide-for-java-devs/ though with using Vertx 4 rather than 3.
 
-To launch your tests:
-```
-./gradlew clean test
-```
+== How to configure
 
-To package your application:
+Running the following command will configure the application with the necessary dependencies:
 ```
 ./gradlew clean assemble
 ```
 
-To run your application:
+== How to run locally
+
+The application can be run locally with the following command:
 ```
 ./gradlew clean run
 ```
 
-== Help
+== How to test
 
-* https://vertx.io/docs/[Vert.x Documentation]
-* https://stackoverflow.com/questions/tagged/vert.x?sort=newest&pageSize=15[Vert.x Stack Overflow]
-* https://groups.google.com/forum/?fromgroups#!forum/vertx[Vert.x User Group]
-* https://gitter.im/eclipse-vertx/vertx-users[Vert.x Gitter]
+The application can be tested using the following command:
+```
+./gradlew clean test
+```
 
-** TODO
+
+== TODO
 - Make available SQL queries independent of logic code
-- Use Vertx services
+- Use Vertx services instead of eventbus
 - Refactor 'updateServices' to use RxJava fully
 - Secure application
+- Update CORS headers to reflect production environment
+- Make interval for updating services configurable
 

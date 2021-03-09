@@ -17,16 +17,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-public class DatabaseVerticle extends AbstractVerticle {
 
-  public enum ErrorCodes {
-    NO_ACTION_SPECIFIED,
-    BAD_ACTION,
-    DB_ERROR
-  }
+
+public class DatabaseVerticle extends AbstractVerticle {
 
   private MySQLPool pool;
   private static final Logger LOGGER = LoggerFactory.getLogger(DatabaseVerticle.class);
+
+  // SQL queries
   private static final String SQL_CREATE_SERVICE_TABLE = "create table if not exists Service (Id integer auto_increment primary key, Url varchar(255), Name varchar(255), Status varchar(255), Created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, LastUpdated TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP)";
   private static final String SQL_GET_SERVICES = "select * from Service";
   private static final String SQL_ADD_SERVICE = "INSERT INTO Service (Url, Name, Status, Created, LastUpdated) \n" +
@@ -35,6 +33,7 @@ public class DatabaseVerticle extends AbstractVerticle {
   private static final String SQL_UPDATE_SERVICE = "UPDATE Service SET Url=#{url}, Name=#{name}, LastUpdated=current_timestamp() WHERE Id=#{id}";
   private static final String SQL_UPDATE_WITH_STATUS_SERVICE = "UPDATE Service SET Url=#{url}, Name=#{name}, Status=#{status}, LastUpdated=current_timestamp() WHERE Id=#{id}";
 
+  // DB configuration
   public static final String CONFIG_DB_PORT = "db.port";
   public static final String CONFIG_DB_DEFAULT_DB = "db.default.db";
   public static final String CONFIG_DB_HOST = "db.host";
@@ -79,10 +78,13 @@ public class DatabaseVerticle extends AbstractVerticle {
     });
   }
 
+  /**
+   * Get database action and perform operation according to message. Fails if message is not recognized.
+   * @param message - eventbus message containing identifier to perform correct db operation
+   */
   public void onMessage(Message<JsonObject> message) {
     if (!message.headers().contains("action")) {
-//      LOGGER.error("No action header specified for message with headers {} and body {}",
-//        message.headers(), message.body().encodePrettily());
+      LOGGER.error("No action header specified");
       message.fail(ErrorCodes.NO_ACTION_SPECIFIED.ordinal(), "No action header specified");
       return;
     }
@@ -106,6 +108,7 @@ public class DatabaseVerticle extends AbstractVerticle {
     }
   }
 
+  // Get services from db and send back via message
   private void getServices(Message<JsonObject> message) {
     pool.query(SQL_GET_SERVICES).execute(res -> {
       if (res.failed()) {
@@ -120,6 +123,7 @@ public class DatabaseVerticle extends AbstractVerticle {
     });
   }
 
+  // Add service to db
   private void addService(Message<JsonObject> message) {
 
     JsonObject json = message.body();
@@ -141,6 +145,7 @@ public class DatabaseVerticle extends AbstractVerticle {
     });
   }
 
+  // Delete service from db
   private void removeService(Message<JsonObject> message) {
 
     JsonObject json = message.body();
@@ -156,7 +161,7 @@ public class DatabaseVerticle extends AbstractVerticle {
     });
   }
 
-
+  // Update service from db with or without status
   private void updateService(Message<JsonObject> message) {
     String updateQuery = SQL_UPDATE_SERVICE;
     JsonObject json = message.body();
@@ -181,6 +186,11 @@ public class DatabaseVerticle extends AbstractVerticle {
     });
   }
 
+  /**
+   * Log error and fail message with same error
+   * @param message - eventbus message
+   * @param cause - cause of error
+   */
   private void reportQueryError(Message<JsonObject> message, Throwable cause) {
     LOGGER.error("Database query error", cause);
     message.fail(ErrorCodes.DB_ERROR.ordinal(), cause.getMessage());

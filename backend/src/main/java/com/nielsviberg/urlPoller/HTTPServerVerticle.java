@@ -55,6 +55,7 @@ public class HttpServerVerticle extends AbstractVerticle {
     HttpServer server = vertx.createHttpServer();
     client = WebClient.create(vertx);
 
+    // Scheme utils for validation
     SchemaRouter schemaRouter = SchemaRouter.create(vertx, new SchemaRouterOptions());
     SchemaParser schemaParser = SchemaParser.createDraft7SchemaParser(schemaRouter);
 
@@ -99,6 +100,7 @@ public class HttpServerVerticle extends AbstractVerticle {
 
     // Routing
     Router router = Router.router(vertx);
+    // Option route to support DELETE, POST and PUT
     router.options("/").handler(CorsHandler.create("*")
       .allowedMethod(HttpMethod.OPTIONS)
       .allowedMethod(HttpMethod.DELETE)
@@ -109,6 +111,7 @@ public class HttpServerVerticle extends AbstractVerticle {
       .allowedHeader("Access-Control-Allow-Origin")
       .allowedHeader("Access-Control-Allow-Headers")
       .allowedHeader("Content-Type"));
+    // Get services route
     router
       .get("/")
       .handler(CorsHandler.create("*")
@@ -120,6 +123,7 @@ public class HttpServerVerticle extends AbstractVerticle {
         .allowedHeader("Content-Type"))
       .handler(this::serviceGetHandler);
     router.post().handler(BodyHandler.create());
+    // Add service route with validation
     router
       .post("/")
       .handler(CorsHandler.create("*")
@@ -133,6 +137,7 @@ public class HttpServerVerticle extends AbstractVerticle {
       .handler(addValidateHandler)
       .handler(this::serviceAddHandler);
     router.delete().handler(BodyHandler.create());
+    // Delete service route with validation
     router
       .delete("/")
       .handler(CorsHandler.create("*")
@@ -146,6 +151,7 @@ public class HttpServerVerticle extends AbstractVerticle {
       .handler(deleteValidateHandler)
       .handler(this::serviceDeletionHandler);
     router.put().handler(BodyHandler.create());
+    // Update service route with validation
     router
       .put("/")
       .handler(CorsHandler.create("*")
@@ -165,6 +171,7 @@ public class HttpServerVerticle extends AbstractVerticle {
     exec.scheduleAtFixedRate(updateServicesRunnable, 0, 1, TimeUnit.MINUTES);
 
     int portNumber = config().getInteger(CONFIG_HTTP_SERVER_PORT, 8888);
+    // Initialize server
     server
       .requestHandler(router)
       .listen(portNumber, ar -> {
@@ -183,6 +190,7 @@ public class HttpServerVerticle extends AbstractVerticle {
    * url and update the service entry
    */
   private void updateServices() {
+    // Get services
     DeliveryOptions options = new DeliveryOptions().addHeader("action", "get-services");
     vertx.eventBus().request(DBQueue, null, options, reply -> {
       if (reply.failed()) {
@@ -191,13 +199,15 @@ public class HttpServerVerticle extends AbstractVerticle {
       }
       JsonObject body = (JsonObject) reply.result().body();
 
+      // Convert json to arraylist
       Gson gson = new Gson();
       Type serviceListType = new TypeToken<ArrayList<Service>>() {
       }.getType();
       ArrayList<Service> services = gson.fromJson(String.valueOf(body.getJsonArray("services")), serviceListType);
 
-      // Check status of all services
+      // Iterate through all services
       services.forEach(service -> {
+        // Get status of service
         Single<HttpResponse<Buffer>> statusSingle = client
           .getAbs(service.Url)
           .timeout(config().getInteger(CONFIG_TIMEOUT, 4000))
@@ -212,9 +222,8 @@ public class HttpServerVerticle extends AbstractVerticle {
             }
             return status;
           })
-          .onErrorReturn(id -> "FAIL")
+          .onErrorReturn(id -> "FAIL") // errors are regards as 'FAIL' for status
           .subscribe(status -> {
-            // Update status of services
             JsonObject json = new JsonObject();
             json.put("id", service.Id);
             json.put("url", service.Url);
@@ -222,6 +231,7 @@ public class HttpServerVerticle extends AbstractVerticle {
             json.put("status", status);
             json.put("updateStatus", true);
 
+            // Update status of services
             DeliveryOptions updateOptions = new DeliveryOptions().addHeader("action", "update-service");
             vertx.eventBus().request(DBQueue, json, updateOptions);
           });
@@ -229,6 +239,10 @@ public class HttpServerVerticle extends AbstractVerticle {
     });
   }
 
+  /**
+   * Get all services from database
+   * @param context - routing context
+   */
   private void serviceGetHandler(RoutingContext context) {
     DeliveryOptions options = new DeliveryOptions().addHeader("action", "get-services");
     vertx.eventBus().request(DBQueue, null, options, reply -> {
@@ -243,6 +257,10 @@ public class HttpServerVerticle extends AbstractVerticle {
     });
   }
 
+  /**
+   * Add service to database
+   * @param context - routing context
+   */
   private void serviceAddHandler(RoutingContext context) {
     // Get values
     JsonObject body = context.getBodyAsJson();
@@ -277,6 +295,7 @@ public class HttpServerVerticle extends AbstractVerticle {
         json.put("name", name);
         json.put("status", status);
 
+        // Save service in database
         DeliveryOptions options = new DeliveryOptions().addHeader("action", "add-service");
         vertx.eventBus().request(DBQueue, json, options, reply -> {
           if (reply.failed()) {
@@ -292,6 +311,10 @@ public class HttpServerVerticle extends AbstractVerticle {
       });
   }
 
+  /**
+   * Delete service from database
+   * @param context - routing context
+   */
   private void serviceDeletionHandler(RoutingContext context) {
     // Get values
     JsonObject body = context.getBodyAsJson();
@@ -302,6 +325,7 @@ public class HttpServerVerticle extends AbstractVerticle {
     JsonObject json = new JsonObject();
     json.put("id", id);
 
+    // Delete service from database
     DeliveryOptions options = new DeliveryOptions().addHeader("action", "remove-service");
     vertx.eventBus().request(DBQueue, json, options, reply -> {
       if (reply.failed()) {
@@ -313,6 +337,10 @@ public class HttpServerVerticle extends AbstractVerticle {
     });
   }
 
+  /**
+   * Update service in database
+   * @param context - routing context
+   */
   private void serviceUpdateHandler(RoutingContext context) {
     // Get values
     JsonObject body = context.getBodyAsJson();
@@ -331,6 +359,7 @@ public class HttpServerVerticle extends AbstractVerticle {
     json.put("url", serviceUrl);
     json.put("name", name);
 
+    // Update existing service in database
     DeliveryOptions options = new DeliveryOptions().addHeader("action", "update-service");
     vertx.eventBus().request(DBQueue, json, options, reply -> {
       if (reply.failed()) {
@@ -347,7 +376,7 @@ public class HttpServerVerticle extends AbstractVerticle {
    *
    * @param url     - url to be validated
    * @param context - Routing context
-   * @return - url validity
+   * @return        - url validity
    */
   private Boolean validateUrl(String url, RoutingContext context) {
     // Validate url format
