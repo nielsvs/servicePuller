@@ -62,6 +62,7 @@ The following technologies are the mainly used technologies to build, package an
 - Add production apiHost when available
 - Improve error messages to users (could come from BE)
 - Move local text to CMS
+- Add test to rest of functionality
 
 ## Contributing
 
