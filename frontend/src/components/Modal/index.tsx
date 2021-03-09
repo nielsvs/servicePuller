@@ -1,7 +1,7 @@
 import React, { ReactNode } from "react";
 import { Container, Content, Description, Title } from "./styled";
 
-interface Props {
+interface Properties {
   title: string;
   description: string;
   children?: ReactNode;
@@ -14,7 +14,7 @@ interface Props {
  * @param children - react children
  * @returns
  */
-export default function Modal({ title, description, children }: Props) {
+export default function Modal({ title, description, children }: Properties) {
   return (
     <Container>
       <Content>

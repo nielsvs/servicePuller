@@ -7,6 +7,8 @@ const texts = {
     editErrorLabel: "Service could not be edited. Try again or contact support",
     addServiceLabel: "Add service",
     addErrorLabel: "Service could not be added. Try again or contact support.",
+    removeErrorLabel:
+      "Service could not be removed. Try again or contact support.",
     loadingErrorLabel:
       "Oops! Seems like an error occured 😅 try to reload the page or contact support.",
     noServicesLabel:
@@ -15,17 +17,17 @@ const texts = {
   addModal: {
     titleLabel: "Add service",
     descriptionLabel: "Below you can add a new service",
-    
     urlInputPlaceholderLabel: "Enter the url of the service",
-    nameInputPlaceholderLabel: "Enter the name of the service"
+    nameInputPlaceholderLabel: "Enter the name of the service",
   },
   confirmModal: {
-      titleLabel: "Delete service",
-      descriptionLabel: (service: string) =>  `Are you sure you want to delete the service ${service}?`
+    titleLabel: "Delete service",
+    descriptionLabel: (service: string) =>
+      `Are you sure you want to delete the service ${service}?`,
   },
   editModal: {
     titleLabel: "Edit service",
-    descriptionLabel: "Below you can edit the service url and name"
+    descriptionLabel: "Below you can edit the service url and name",
   },
   general: {
     urlLabel: "Url",

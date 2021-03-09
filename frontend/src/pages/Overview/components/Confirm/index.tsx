@@ -1,15 +1,15 @@
 import React, { useState } from "react";
-import { GeneralError } from "components/Error/styled";
+import GeneralError from "components/Error/styled";
 import Modal from "components/Modal";
-import { ButtonGroup, CancelButton, DeleteButton } from "./styled";
 import TEXTS from "texts";
+import { ButtonGroup, CancelButton, DeleteButton } from "./styled";
 
 const {
   confirmModal: { titleLabel, descriptionLabel },
   general: { deleteLabel, deletingLabel, cancelLabel },
 } = TEXTS;
 
-interface Props {
+interface Properties {
   name?: string;
   url?: string;
   savingError?: string;
@@ -28,7 +28,7 @@ export default function Confirm({
   url,
   savingError,
   shouldDelete,
-}: Props) {
+}: Properties) {
   // Either show name or url if possible
   const service = name ? `(${name})` : `(${url})` || "";
   const [saving, setSaving] = useState<boolean>(false);

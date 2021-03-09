@@ -3,8 +3,8 @@ import axios from "axios";
 import { render, screen, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import TEXT from "texts";
-import Overview from ".";
 import { Service } from "types/service";
+import Overview from ".";
 
 jest.mock("axios");
 

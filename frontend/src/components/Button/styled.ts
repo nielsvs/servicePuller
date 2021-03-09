@@ -1,6 +1,6 @@
 import styled from "styled-components";
 
-export const Button = styled.button`
+const Button = styled.button`
   width: 100px;
   height: 40px;
   color: white;
@@ -8,3 +8,5 @@ export const Button = styled.button`
   cursor: pointer;
   border-radius: 4px;
 `;
+
+export default Button;

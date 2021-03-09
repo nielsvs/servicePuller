@@ -1,2 +1,4 @@
 // Configuration variables
-export const apiHost = "http://localhost:8888"
+const apiHost = "http://localhost:8888";
+
+export default apiHost;

@@ -1,4 +1,4 @@
-import { Button } from "components/Button/styled";
+import Button from "components/Button/styled";
 import breakpoints from "style/breakpoints";
 import styled from "styled-components";
 
@@ -51,11 +51,11 @@ export const ServicesTableBody = styled.tbody`
   }
 `;
 
-interface ServicesTableStatusCellProps {
+interface ServicesTableStatusCellProperties {
   OK: boolean;
 }
 
-export const ServicesTableStatusCell = styled.td<ServicesTableStatusCellProps>`
+export const ServicesTableStatusCell = styled.td<ServicesTableStatusCellProperties>`
   ${({ OK }) => (OK ? "color: green;" : "color: red")}
 `;
 

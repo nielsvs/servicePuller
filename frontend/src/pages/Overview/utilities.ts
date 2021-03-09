@@ -6,7 +6,7 @@ import { Service } from "types/service";
  * @param b - service
  * @returns if the id of a is larger than b, equal or smaller (number)
  */
-export function compareServices(a: Service, b: Service) {
+export default function compareServices(a: Service, b: Service) {
   if (a.Id < b.Id) {
     return -1;
   }

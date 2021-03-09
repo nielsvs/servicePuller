@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import { Input, InputError, InputLabel } from "components/Input/styled";
-import { GeneralError } from "components/Error/styled";
+import GeneralError from "components/Error/styled";
 import Modal from "components/Modal";
+import { Service } from "types/service";
+import TEXTS from "texts";
 import {
   ButtonGroup,
   CancelButton,
@@ -10,8 +12,6 @@ import {
   InputContainer,
   Body,
 } from "./styled";
-import { Service } from "types/service";
-import TEXTS from "texts";
 
 const {
   editModal: { titleLabel, descriptionLabel },
@@ -26,7 +26,7 @@ const {
   },
 } = TEXTS;
 
-interface Props {
+interface Properties {
   name?: string;
   url?: string;
   savingError?: string;
@@ -39,7 +39,7 @@ interface Props {
  * @param url - url of service
  * @param savingError - possible error when trying to update service
  */
-export default function Edit({ name, url, savingError, edit }: Props) {
+export default function Edit({ name, url, savingError, edit }: Properties) {
   const [newName, setNewName] = useState<string | undefined>(name);
   const [newUrl, setNewUrl] = useState<string | undefined>(url);
   const [error, setError] = useState<string>();
@@ -55,8 +55,9 @@ export default function Edit({ name, url, savingError, edit }: Props) {
     }
     // Validate url
     try {
+      // eslint-disable-next-line no-new
       new URL(newUrl);
-    } catch (err) {
+    } catch {
       setError(invalidUrlErrorLabel);
       setSaving(false);
       return;

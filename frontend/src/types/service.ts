@@ -3,6 +3,6 @@ export interface Service {
   Url: string;
   Name: string;
   Status: string;
-  Created: string; //Timestamp
-  LastUpdated: string; //Timestamp
+  Created: string; // Timestamp
+  LastUpdated: string; // Timestamp
 }

@@ -1,7 +1,12 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { formatDistance } from "date-fns";
-import { compareServices } from "./utilities";
+import EmptyImage from "assets/images/empty.png";
+import ErrorImage from "assets/images/error.png";
+import { Service } from "types/service";
+import TEXTS from "texts";
+import apiHost from "config";
+import compareServices from "./utilities";
 import {
   AddServiceButton,
   Border,
@@ -23,11 +28,6 @@ import {
 import Confirm from "./components/Confirm";
 import Edit from "./components/Edit";
 import Add from "./components/Add";
-import EmptyImage from "assets/images/empty.png";
-import ErrorImage from "assets/images/error.png";
-import { Service } from "types/service";
-import TEXTS from "texts";
-import { apiHost } from "config";
 
 const {
   overview: {
@@ -38,6 +38,7 @@ const {
     addServiceLabel,
     loadingErrorLabel,
     noServicesLabel,
+    removeErrorLabel,
   },
   general: {
     loadingLabel,
@@ -54,9 +55,9 @@ const {
  */
 export default function Overview() {
   const [services, setServices] = useState<Service[]>();
-  const [error, setError] = useState<string>();
-  const [deleteService, setDeleteService] = useState<Partial<Service>>();
-  const [editService, setEditService] = useState<Partial<Service>>();
+  const [error, setError] = useState<string | void>();
+  const [deleteService, setDeleteService] = useState<Partial<Service> | void>();
+  const [editService, setEditService] = useState<Partial<Service> | void>();
   const [addService, setAddService] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -66,8 +67,10 @@ export default function Overview() {
       try {
         const result = await axios.get(apiHost);
         setServices(result.data.services);
-      } catch (err) {}
-      setLoading(false);
+        setLoading(false);
+      } catch {
+        setLoading(false);
+      }
     };
     fetchServices();
   }, []);
@@ -83,13 +86,13 @@ export default function Overview() {
           (service) => service.Id !== deleteService.Id
         );
         setServices(newServices);
-        setDeleteService(undefined);
-      } catch (err) {
-        setError(err);
+        setDeleteService();
+      } catch {
+        setError(removeErrorLabel);
       }
     } else {
-      setDeleteService(undefined);
-      setError(undefined);
+      setDeleteService();
+      setError();
     }
   };
 
@@ -104,7 +107,7 @@ export default function Overview() {
         });
         // Update edited service
         const oldService = services.find(
-          (service) => service.Id === editService.Id
+          (serviceElement) => serviceElement.Id === editService.Id
         );
 
         if (!oldService) {
@@ -116,18 +119,20 @@ export default function Overview() {
             Url: service.Url || "",
           };
           const newServices: Service[] = [
-            ...services.filter((service) => service.Id !== editService.Id),
+            ...services.filter(
+              (serviceElement) => serviceElement.Id !== editService.Id
+            ),
             newService,
           ].sort(compareServices);
           setServices(newServices);
-          setEditService(undefined);
+          setEditService();
         }
-      } catch (err) {
+      } catch {
         setError(editErrorLabel);
       }
     } else {
-      setEditService(undefined);
-      setError(undefined);
+      setEditService();
+      setError();
     }
   };
 
@@ -145,12 +150,12 @@ export default function Overview() {
         setServices(allServicesResult.data.services);
 
         setAddService(false);
-      } catch (err) {
+      } catch {
         setError(addErrorLabel);
       }
     } else {
       setAddService(false);
-      setError(undefined);
+      setError();
     }
   };
 
@@ -206,11 +211,13 @@ export default function Overview() {
                     })}
                   </td>
                   <ServicesTableActionCell>
+                    {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
                     <i
                       className="fas fa-trash"
                       onClick={() => setDeleteService({ Id, Url, Name })}
                       style={deleteIcon}
                     ></i>
+                    {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
                     <i
                       onClick={() => setEditService({ Id, Url, Name })}
                       className="fas fa-edit"
@@ -227,7 +234,7 @@ export default function Overview() {
         <Confirm
           name={deleteService.Name}
           url={deleteService.Url}
-          savingError={error}
+          savingError={error || undefined}
           shouldDelete={(shouldDelete: boolean) =>
             deleteSelectedService(shouldDelete)
           }
@@ -237,14 +244,14 @@ export default function Overview() {
         <Edit
           name={editService.Name}
           url={editService.Url}
-          savingError={error}
+          savingError={error || undefined}
           edit={(service?: Partial<Service>) => editSelectedService(service)}
         />
       )}
       {addService && (
         <Add
           add={(service?: Partial<Service>) => addNewService(service)}
-          savingError={error}
+          savingError={error || undefined}
         />
       )}
     </Container>

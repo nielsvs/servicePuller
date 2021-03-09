@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import Modal from "components/Modal";
 import { Input, InputLabel, InputError } from "components/Input/styled";
-import { GeneralError } from "components/Error/styled";
+import GeneralError from "components/Error/styled";
+import { Service } from "types/service";
+import TEXTS from "texts";
 import {
   AddButton,
   ButtonGroup,
@@ -10,8 +12,6 @@ import {
   Form,
   Body,
 } from "./styled";
-import { Service } from "types/service";
-import TEXTS from "texts";
 
 const {
   addModal: {
@@ -32,7 +32,7 @@ const {
   },
 } = TEXTS;
 
-interface Props {
+interface Properties {
   add: (service?: Partial<Service>) => void;
   savingError?: string;
 }
@@ -42,7 +42,7 @@ interface Props {
  * @param add - callback function to add service
  * @param savingError - possible error when trying to add service
  */
-export default function Add({ add, savingError }: Props) {
+export default function Add({ add, savingError }: Properties) {
   const [newName, setNewName] = useState<string>("");
   const [newUrl, setNewUrl] = useState<string>("");
   const [error, setError] = useState<string>();
@@ -58,8 +58,9 @@ export default function Add({ add, savingError }: Props) {
     }
     // Validate url
     try {
+      // eslint-disable-next-line no-new
       new URL(newUrl);
-    } catch (err) {
+    } catch {
       setError(invalidUrlErrorLabel);
       setSaving(false);
       return;
